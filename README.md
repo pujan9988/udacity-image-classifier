@@ -142,3 +142,4 @@ If you have ideas for enhancements or would like to contribute, please feel free
 
 Happy coding and thank you for your support!
 
+Thanks to samarekh. Some parts of the code structure, format, and overall paradigm were inspired by [samerkh/Create-Your-Own-Image-Classifier](https://github.com/samerkh/Create-Your-Own-Image-Classifier).
