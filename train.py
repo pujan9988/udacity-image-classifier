@@ -1,7 +1,6 @@
 import torch
 from torch import nn,optim 
 from torch.utils.data import DataLoader
-import torchvision
 from torchvision import datasets,models
 from torchvision.transforms import v2
 from argparse import ArgumentParser
@@ -47,7 +46,7 @@ def val_test_transform(val_dir):
                             v2.ToTensor(),
                             v2.Normalize([0.485, 0.456, 0.406],
                                          [0.229, 0.224, 0.225])
-                                     ])
+                            ])
     
     val_data = datasets.ImageFolder(root=val_dir,transform=transforms)
     return val_data 
@@ -59,9 +58,9 @@ def data_loader(data,batch_size=64,shuffle=True):
 def device_agnostic():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device=="cuda":
-        print(f"Using {device} for training.")
+        print(f"Using {device}")
     else:
-        print(f"No cuda found using cpu for training")
+        print(f"No cuda found ! Using cpu")
     return device 
 
 def load_model(arch):
@@ -92,6 +91,23 @@ def modify_classifier(model,hidden_units,output_units):
     )
     return classifier 
 
+def test_model(test_dataloader,device,model):
+
+    accuracy = 0
+    model.eval()
+    with torch.inference_mode():
+        for inputs,labels in test_dataloader:
+            inputs,labels = inputs.to(device),labels.to(device)
+            outputs = model(inputs)
+            ps = torch.exp(outputs)
+            _, top_class = ps.topk(1, dim=1)
+            equals = top_class == labels.view(*top_class.shape)
+            accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
+
+        avg_accuracy = accuracy/len(test_dataloader)
+
+    return avg_accuracy
+
 def train_model(train_dataloader,val_dataloader,
                 device,model,criterion,optimizer,epochs=5):
     
@@ -120,7 +136,7 @@ def train_model(train_dataloader,val_dataloader,
                 val_loss += loss.item()
 
                 ps = torch.exp(outputs)
-                top_p, top_class = ps.topk(1, dim=1)
+                _, top_class = ps.topk(1, dim=1)
                 equals = top_class == labels.view(*top_class.shape)
                 accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
 
@@ -137,6 +153,8 @@ def save_checkpoint(model,class_to_idx,path,
                     arch,hidden_units,output_units):
     
     model.class_to_idx = class_to_idx
+    
+
     checkpoint = {
         "state_dict":model.state_dict(),
         "class_to_idx": model.class_to_idx,
@@ -162,12 +180,15 @@ def main():
 
     train_dir = data_dir / "train"
     val_dir = data_dir / "valid"
+    test_dir = data_dir / "test"
 
     train_dataset = train_transform(train_dir)
     val_dataset = val_test_transform(val_dir)
+    test_dataset = val_test_transform(test_dir)
 
     train_dataloader = data_loader(train_dataset,batch_size=64,shuffle=True)
     val_dataloader = data_loader(val_dataset,batch_size=64,shuffle=False)
+    test_dataloader = data_loader(test_dataset,batch_size=64,shuffle=False)
 
     if gpu:
         device = device_agnostic()
@@ -189,8 +210,13 @@ def main():
 
     model.to(device)
 
-    train_model(train_dataloader,val_dataloader,device,model,
+    model = train_model(train_dataloader,val_dataloader,device,model,
                 criterion,optimizer,epochs)
+    
+    acc = test_model(test_dataloader,device,model)
+
+    print(f"The accuracy of the model on test set: {acc}")
+
 
     save_checkpoint(model,train_dataset.class_to_idx,save_path,
                     architecture,hidden_units,output_units)
