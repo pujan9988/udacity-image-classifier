@@ -5,6 +5,9 @@ from torchvision.transforms import v2
 from PIL import Image 
 import json 
 from pathlib import Path
+import warnings
+
+warnings.filterwarnings("ignore")
 
 from train import load_model,device_agnostic,modify_classifier
 
@@ -100,7 +103,9 @@ def main():
         top_classes = top_classes[0].tolist()
         idx_to_classes = {value:key for key,value in model.class_to_idx.items()}
         top_classes = [idx_to_classes[x] for x in top_classes]
+        top_classes_names = [cat_to_name[i] for i in top_classes]
         print(top_classes)
+        print(top_classes_names)
 
 if __name__ == "__main__":
     main()
