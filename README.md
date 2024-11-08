@@ -141,5 +141,3 @@ Thank you for checking out this project! I welcome any suggestions, feedback, or
 If you have ideas for enhancements or would like to contribute, please feel free to reach out or submit a pull request. 
 
 Happy coding and thank you for your support!
-
-Thanks to samarekh. Some parts of the code structure, format, and overall paradigm were inspired by [samerkh/Create-Your-Own-Image-Classifier](https://github.com/samerkh/Create-Your-Own-Image-Classifier).
